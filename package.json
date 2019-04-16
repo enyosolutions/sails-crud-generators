@@ -1,0 +1,26 @@
+{
+  "name": "sails-crud-generators",
+  "version": "0.0.1",
+  "description": "Custom Sails.js generators for automatic generation of db models, controllers, routes and unit tests",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enyosolutions-team/sails-crud-generators.git"
+  },
+  "author": "Faouzane Batiga",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/enyosolutions-team/sails-crud-generators/issues"
+  },
+  "homepage": "https://github.com/enyosolutions-team/sails-crud-generators#readme",
+  "dependencies": {
+    "colors": "^1.3.3",
+    "lodash": "^4.17.11",
+    "replace": "^1.1.0",
+    "shelljs": "^0.8.3",
+    "util": "^0.11.1"
+  }
+}

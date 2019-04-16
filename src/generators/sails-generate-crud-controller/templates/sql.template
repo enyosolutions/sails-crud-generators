@@ -1,0 +1,475 @@
+/**
+ * Api/<%= filename %>
+ *
+ * @description :: Server-side logic for managing <%= entity %> endpoints
+ * @help        :: See http://sailsjs.org/#!/documentation/concepts/Controllers
+ */
+
+
+module.exports = {
+  stats(req, resp) {
+    const output = {};
+    const endpoint = '<%= entity %>';
+
+    if (!sails.models[endpoint].repository) {
+      return resp.status(404).json({
+        errors: [{
+          message: 'not_found',
+          stack: 'not_found'
+        }],
+        message: 'not_found'
+      });
+    }
+    const tableName = sails.models[endpoint].tableName;
+    sails.models[endpoint].repository
+      .unifiedCount({})
+      .then((data) => {
+        // TOTAL
+        output.total = data;
+
+        // THIS MONTH
+        return sails.sqldb.query(
+          `SELECT COUNT(*)  as month
+             FROM ` + tableName + `}
+             WHERE
+             createdOn >= SUBDATE(CURDATE(), DAYOFMONTH(CURDATE())-1)`, {
+            type: sails.sqldb.QueryTypes.SELECT
+          }
+        );
+      })
+      .then((data) => {
+        if (data && data.length > 0 && data[0].month) {
+          output.month = data[0].month;
+        } else {
+          output.month = 0;
+        }
+
+        // THIS WEEK
+        return sails.sqldb.query(
+          `SELECT COUNT(*) as week
+             FROM ` + tableName + `}
+             WHERE
+             YEARWEEK(createdOn) = YEARWEEK(CURRENT_TIMESTAMP)`, {
+            type: sails.sqldb.QueryTypes.SELECT
+          }
+        );
+      })
+      .then((data) => {
+        if (data && data.length > 0 && data[0].week) {
+          output.week = data[0].week;
+        } else {
+          output.week = 0;
+        }
+
+        // TODAY
+        return sails.sqldb.query(
+          `SELECT COUNT(*) as today
+             FROM ` + tableName + `}
+             WHERE
+             DATE(createdOn) = DATE(NOW())`, {
+            type: sails.sqldb.QueryTypes.SELECT
+          }
+        );
+      })
+      .then((data) => {
+        if (data && data.length > 0 && data[0].today) {
+          output.today = data[0].today;
+        } else {
+          output.today = 0;
+        }
+
+        return resp.status(200).json({
+          body: output
+        });
+      })
+      .catch((err) => {
+        sails.tracer.warn(err);
+        Tools.errorCallback(err, resp);
+      });
+  },
+
+  /**
+    * [list description]
+    * [description]
+    * @method
+    * @param  {[type]} req  [description]
+    * @param  {[type]} resp [description]
+    * @return {[type]}      [description]
+    */
+  list(req, resp) {
+    let items = [];
+    const {
+      listOfValues, startPage, limit, offset, order
+    } = Tools.injectPaginationQuery(req);
+    const query = Tools.injectQueryParams(req);
+
+    const repository = Tools.getEntityManager('<%= entity %>', resp);
+    repository
+      .findAndCountAll({
+        where: query,
+        order,
+        limit,
+        offset,
+      }).then((result) => {
+        items = result.rows;
+        if (listOfValues) {
+          items = items.map(item => ({
+            _id: item.id,
+            label: item.title || item.name || item.label
+            || (item.firstname ? item.firstname + ' ' + item.lastname : '' ),
+          }));
+        }
+        return result.count || 0;
+      })
+      .catch((err) => {
+        sails.tracer.warn(err);
+        throw new EnyoError({
+          code: 404,
+          errors: [{
+            message: err.message || 'not_found',
+            stack: err.stack || 'not_found'
+          }],
+          message: err.message || 'not_found'
+        });
+      })
+      .then(totalCount => resp.status(200).json({
+        body: items,
+        page: startPage,
+        count: limit,
+        totalCount: (totalCount && totalCount.length > 0) ? totalCount[0]['COUNT(*)'] : totalCount
+      }))
+      .catch((err) => {
+        sails.tracer.warn(err);
+        Tools.errorCallback(err, resp);
+      });
+  },
+
+
+  /**
+    * [GET description]
+    * [description]
+    * @method
+    * @param  {[type]} req  [description]
+    * @param  {[type]} resp [description]
+    * @return {[type]}      [description]
+    */
+  get(req, resp) {
+    const id = req.param('id');
+    if (!id) {
+      return false;
+    }
+    const listOfValues = req.query.listOfValues ? req.query.listOfValues : false;
+
+    const repository = Tools.getEntityManager('<%= entity %>', resp);
+    repository
+      .find({ where: { _id: id } })
+
+      .catch((err) => {
+        sails.tracer.warn(err);
+        throw new EnyoError({
+          code: 404,
+          errors: [{
+            message: err.message || 'not_found',
+            stack: err.stack || 'not_found'
+          }],
+          message: err.message || 'not_found'
+        });
+      })
+      .then((item) => {
+        if (item) {
+          if (listOfValues) {
+            item = {
+              _id: item._id,
+              label: item.title || item.name || item.label
+              || (item.firstname ? item.firstname + ' ' + item.lastname : '' ),
+
+            };
+          }
+          return resp.status(200).json({
+            body: item
+          });
+        }
+        return resp.status(404).json({
+          errors: [{
+            message: 'not_found',
+            stack: 'not_found'
+          }],
+          message: 'not_found'
+        });
+      })
+      .catch((err) => {
+        sails.tracer.warn(err);
+        Tools.errorCallback(err, resp);
+      });
+  },
+
+  post(req, resp) {
+    const data = Tools.injectUserId(req.body, req.token);
+
+    const repository = Tools.getEntityManager('<%= entity %>', resp);
+    repository
+      .create(data)
+
+      .then(result => resp.status(200).json({
+        body: result
+      }))
+      .catch((err) => {
+        sails.tracer.warn(err);
+        if (err && err.name === 'SequelizeValidationError') {
+          resp.status(400).json({
+            errors: err.errors && err.errors.map(e => e.message),
+            message: 'validation_error'
+          });
+          return false;
+        }
+        Tools.errorCallback(err, resp);
+      });
+  },
+
+  /**
+    * [put description]
+    * [description]
+    * @method
+    * @param  {[type]} req  [description]
+    * @param  {[type]} resp [description]
+    * @return {[type]}      [description]
+    */
+  put(req, resp) {
+    const id = req.param('id');
+    const data = req.body;
+
+    const repository = Tools.getEntityManager('<%= entity %>', resp);
+    repository
+      .findById(id)
+      .then((result) => {
+        if (result) {
+          return repository.update(data, {
+            where: {
+              _id: id
+            }
+          });
+        }
+        throw new EnyoError({
+          code: 404,
+          stack: 'not_found',
+          message: 'not_found',
+          errors: ['not_found']
+        });
+      })
+      .then(() => repository.findById(id))
+      .then((result) => {
+        if (result) {
+          return resp.status(200).json({
+            body: result
+          });
+        }
+        throw new EnyoError({
+          code: 404,
+          stack: 'not_found',
+          message: 'not_found',
+          errors: ['not_found'],
+        });
+      })
+      .catch((err) => {
+        sails.tracer.warn(err);
+        if (err && err.name === 'SequelizeValidationError') {
+          return resp.status(400).json({
+            errors: err.errors && err.errors.map(e => e.message),
+            message: 'validation_error'
+          });
+        }
+        Tools.errorCallback(err, resp);
+      });
+  },
+
+
+  /**
+    * [delete Item]
+    * [description]
+    * @method
+    * @param  {[type]} req  [description]
+    * @param  {[type]} resp [description]
+    * @return {[type]}      [description]
+    */
+  delete(req, resp) {
+    const id = req.param('id');
+
+    const repository = Tools.getEntityManager('<%= entity %>', resp);
+    repository.findById(id)
+      .then((result) => {
+        if (result) {
+          return repository
+            .destroy({
+              where: {
+                _id: id,
+              },
+            });
+        }
+        throw new EnyoError({
+          code: 404,
+          stack: 'not_found',
+          message: 'not_found',
+          errors: ['not_found'],
+        });
+      })
+      .then((result) => {
+        if (result) {
+          resp.status(200).json({
+            status: 'OK',
+          });
+        }
+      })
+      .catch((err) => {
+        sails.tracer.warn(err);
+        Tools.errorCallback(err, resp);
+      });
+  },    
+
+  /**
+    * [Export Item]
+    * [description]
+    * @method
+    * @param  {[type]} req  [description]
+    * @param  {[type]} resp [description]
+    * @return {[type]}      [description]
+    */
+  export(req, resp) {
+    const repository = Tools.getEntityManager('<%= entity %>', resp);
+    const endpoint = '<%= entity %>';
+    let data = [];
+
+
+    const url = '<%= entity %>_export';
+    const options = {};
+
+    repository
+      .findAll()
+      .then((result) => {
+        data = result;
+        // eslint-disable-next-line no-undef
+        return ExcelService.export(data, url, options);
+      })
+      .then((result) => {
+        if (result) {
+          if (result.errno) {
+            return resp.status(500).json({
+              errors: [
+                {
+                  message: 'export_failed',
+                },
+              ],
+              message: 'export_failed',
+            });
+          }
+
+          return resp.status(200).json({
+            status: 'OK',
+            url: result,
+          });
+        }
+        throw new EnyoError({
+          code: 400,
+          errors: [{
+            message: 'export_selection_error',
+            stack: 'export_selection_error'
+          }],
+          message: 'export_selection_error'
+        });
+      })
+      .catch((err) => {
+        sails.tracer.warn(err);
+        Tools.errorCallback(err, resp);
+      });
+  },
+
+  /**
+    * [Import Item]
+    * [description]
+    * @method
+    * @param  {[type]} req  [description]
+    * @param  {[type]} resp [description]
+    * @return {[type]}      [description]
+    */
+  import(req, resp) {
+    const repository = Tools.getEntityManager('<%= entity %>', resp);
+    const endpoint = '<%= entity %>';
+    const properData = [];
+    const improperData = [];
+    let doc;
+    DocumentManager.httpUpload(req, {
+      path: 'updloads/excel',
+    })
+      .then((document) => {
+        if (document && document.length > 0) {
+          doc = document;
+          return ExcelService.parse(doc[0].fd, {
+            columns: {},
+            eager: false,
+          });
+        }
+        throw new EnyoError({
+          code: 404,
+          stack: 'no_file_uploaded',
+          message: 'no_file_uploaded',
+          errors: ['no_file_uploaded'],
+        });
+      })
+      .then((result) => {
+        if (result) {
+          result.forEach((item) => {
+            if (!item.code || !item.designation || !item.family || !item.numberOfPoints) {
+              improperData.push(item);
+            } else {
+              item.title = item.designation;
+              properData.push(item);
+            }
+          });
+          if (properData.length > 0) {
+            return repository.bulkCreate(properData);
+          }
+          return true;
+        }
+        throw new EnyoError({
+          code: 404,
+          stack: 'parse_error',
+          message: 'parse_error',
+          errors: ['parse_error'],
+        });
+      })
+      .catch((err) => {
+        sails.tracer.warn(err && err.message ? err.message : err);
+        throw new EnyoError({
+          errors: [
+            {
+              message: err.message || 'create_error',
+              stack: err.stack || 'create_error',
+            },
+          ],
+          message: err.message || 'create_error',
+        });
+      })
+      .then(() => DocumentManager.delete(doc[0].fd))
+      .catch((err) => {
+        sails.tracer.warn(err && err.message ? err.message : err);
+        throw new EnyoError({
+          code: 500,
+          errors: [
+            {
+              message: err.message || 'delete_error',
+              stack: err.stack || 'delete_error',
+            },
+          ],
+          message: err.message || 'delete_error',
+        });
+      })
+      .then(() => resp.json({
+        body: 'ok',
+        properData,
+        improperData,
+      }))
+      .catch((err) => {
+        sails.tracer.warn(err && err.message ? err.message : err);
+        Tools.errorCallback(err, resp);
+      });
+  },
+};
