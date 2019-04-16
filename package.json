@@ -1,6 +1,6 @@
 {
   "name": "sails-crud-generators",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Custom Sails.js generators for automatic generation of db models, controllers, routes and unit tests",
   "main": "index.js",
   "scripts": {

@@ -24,7 +24,7 @@ module.exports = {
    * @param  {Function} done
    */
   before(scope, done) {
-    const db = require(path.resolve(__dirname, '../../../resources/sql/models'));
+    const db = require(path.resolve(__dirname, '../../../../../resources/sql/models'));
     
     db.sequelize
       .sync({ alter: true })
