@@ -50,7 +50,7 @@ module.exports = {
   'PATCH /api/${route}/:id/import': '${file}Controller.import',
   'DELETE /api/${route}/:id': '${file}Controller.delete',`,
 
-      paths: [path.resolve(__dirname, '../../../config/routes.js')],
+      paths: [path.resolve(__dirname, '../../../../../config/routes.js')],
       recursive: false,
       silent: false,
     });
@@ -62,7 +62,7 @@ module.exports = {
     '*': ['isAuthorized'],
   },`,
 
-      paths: [path.resolve(__dirname, '../../../config/policies.js')],
+      paths: [path.resolve(__dirname, '../../../../../config/policies.js')],
       recursive: false,
       silent: false,
     });    

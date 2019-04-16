@@ -14,11 +14,11 @@ Then merge the following into your `.sailsrc` file:
 {
   "generators": {
     "modules": {
-      "db:sync": "node_modules/sails-crud-generators/src/generators/sails-generate-sequelize-sync",
-      "schema": "node_modules/sails-crud-generators/src/generators/sails-generate-schema",
-      "controller": "node_modules/sails-crud-generators/src/generators/sails-generate-crud-controller",
-      "route": "node_modules/sails-crud-generators/src/generators/sails-generate-route",
-      "api": "node_modules/sails-crud-generators/src/generators/sails-generate-api"
+      "db:sync": "./node_modules/sails-crud-generators/src/generators/sails-generate-sequelize-sync",
+      "schema": "./node_modules/sails-crud-generators/src/generators/sails-generate-schema",
+      "controller": "./node_modules/sails-crud-generators/src/generators/sails-generate-crud-controller",
+      "route": "./node_modules/sails-crud-generators/src/generators/sails-generate-route",
+      "api": "./node_modules/sails-crud-generators/src/generators/sails-generate-api"
     }
   }
 }
