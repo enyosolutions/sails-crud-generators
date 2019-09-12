@@ -7,10 +7,12 @@
  */
 const Sequelize = require('sequelize');
 
+/*
 // event hooks => http://docs.sequelizejs.com/manual/tutorial/hooks.html
 const eventCallback = () => { // items, options
   // do something like stringifying data...
 };
+*/
 
 module.exports = {
   identity: '<%= entity %>',
