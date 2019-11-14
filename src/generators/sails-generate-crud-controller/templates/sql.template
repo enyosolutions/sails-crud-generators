@@ -162,7 +162,7 @@ module.exports = {
 
     const repository = Tools.getEntityManager('<%= entity %>', resp);
     repository
-      .find({ where: { _id: id } })
+      .findByPk(id)
 
       .catch((err) => {
         sails.tracer.warn(err);
@@ -240,7 +240,7 @@ module.exports = {
 
     const repository = Tools.getEntityManager('<%= entity %>', resp);
     repository
-      .findById(id)
+      .findByPk(id)
       .then((result) => {
         if (result) {
           return repository.update(data, {
@@ -256,7 +256,7 @@ module.exports = {
           errors: ['not_found']
         });
       })
-      .then(() => repository.findById(id))
+      .then(() => repository.findByPk(id))
       .then((result) => {
         if (result) {
           return resp.status(200).json({
@@ -295,7 +295,7 @@ module.exports = {
     const id = req.param('id');
 
     const repository = Tools.getEntityManager('<%= entity %>', resp);
-    repository.findById(id)
+    repository.findByPk(id)
       .then((result) => {
         if (result) {
           return repository
