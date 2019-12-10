@@ -382,6 +382,56 @@ module.exports = {
       });
   },
 
+
+
+   importTemplate(req, resp) {
+    const repository = Tools.getEntityManager('<%= entity %>', resp);
+    if (!repository) {
+      throw new Error('table_model_not_found_error_O');
+    }
+
+    let data = [];
+
+    const url = `${entity}_template`;
+    const options = {};
+    const query = {};
+
+    Promise.resolve()
+      .then(() => {
+        return repository.findAll({
+          limit: 1,
+        });
+      })
+      .then((result) => {
+        data = result;
+        return ExcelService.export(data, url, options);
+      })
+      .then((result) => {
+        if (result) {
+          if (result.errno) {
+            return resp.status(500).json({
+              errors: ['export_failed'],
+              message: 'export_failed',
+            });
+          }
+
+          return resp.status(200).json({
+            status: 'OK',
+            url: result,
+          });
+        }
+        return resp.status(404).json({
+          errors: ['not_found'],
+          message: 'not_found',
+        });
+      })
+      .catch((err) => {
+        sails.tracer.warn(err);
+        Tools.errorCallback(err, resp);
+      });
+  },
+  
+  
   /**
     * [Import Item]
     * [description]
