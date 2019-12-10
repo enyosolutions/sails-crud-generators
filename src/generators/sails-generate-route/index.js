@@ -48,6 +48,7 @@ module.exports = {
   'PATCH /api/${route}/:id': '${file}Controller.patch',
   'GET /api/${route}/export': '${file}Controller.export',
   'POST /api/${route}/import': '${file}Controller.import',
+  'GET /api/${route}/import-template': '${file}Controller.importTemplate',
   'DELETE /api/${route}/:id': '${file}Controller.delete',`,
 
       paths: [path.resolve(__dirname, '../../../../../config/routes.js')],
