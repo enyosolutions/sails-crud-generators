@@ -25,9 +25,10 @@ module.exports = {
    */
   before(scope, done) {
     const db = require(path.resolve(__dirname, '../../../../../resources/sql/models'));
-    
+    const alter = scope.alter;
+    const force = scope.force;
     db.sequelize
-      .sync({ alter: true })
+      .sync({ alter, force })
       .then(() => {
         done();
         process.exit();
